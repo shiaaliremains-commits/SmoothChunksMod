@@ -16,7 +16,6 @@ object SmoothchunksClient : ClientModInitializer {
     override fun onInitializeClient() {
         val category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(Smoothchunks.MOD_ID, "main"))
 
-        // زر حرف H لفتح شاشة التحكم والمربع الأسود
         menuKey = KeyMappingHelper.registerKeyMapping(
             KeyMapping("key.smoothchunks.menu", InputConstants.KEY_H, category)
         )
@@ -25,7 +24,7 @@ object SmoothchunksClient : ClientModInitializer {
             val player = client.player ?: return@register
 
             while (menuKey.consumeClick()) {
-                openScreen(SmoothChunksScreen())
+                openScreen(ModMenuIntegration.createScreen(null))
             }
         }
     }

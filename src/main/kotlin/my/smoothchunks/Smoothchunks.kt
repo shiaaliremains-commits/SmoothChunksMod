@@ -24,7 +24,6 @@ object Smoothchunks : ModInitializer {
     var enabled = true
     private var preloadedCount = 0L
 
-    // محرك التوليد المسبق اليدوي الضخم (Mass Pre-generation)
     private var isMassPreloading = false
     private var massTotalChunks = 0
     private var massCompletedChunks = 0
@@ -32,7 +31,6 @@ object Smoothchunks : ModInitializer {
     private var massPlayer: ServerPlayer? = null
     private val massQueue = ArrayDeque<ChunkPos>()
 
-    // محرك السلاسة الحركي المباشر (Live Anti-Stutter)
     private val liveQueue = ArrayDeque<Pair<ServerLevel, ChunkPos>>()
     private val liveRequested = HashSet<ChunkPos>()
     private var tickTimer = 0
@@ -64,12 +62,10 @@ object Smoothchunks : ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register { server ->
             tickTimer++
 
-            // 1. معالجة التوليد المسبق اليدوي الضخم (مع شريط التقدم والوقت المتبقي)
             if (isMassPreloading) {
                 processMassPreloading()
             }
 
-            // 2. معالجة محرك السلاسة الحركي أثناء الركض والطيران
             if (enabled) {
                 for (player in server.playerList.players) {
                     if (player.isSpectator) continue
@@ -99,14 +95,12 @@ object Smoothchunks : ModInitializer {
         val level = player.level() as? ServerLevel ?: return
         val chunkSource = level.chunkSource
 
-        // حلقة دائرية حتى مسافة 4,000 بلوكة (250 شنك كحد أقصى)
         val rSq = radiusChunks * radiusChunks
         for (dx in -radiusChunks..radiusChunks) {
             for (dz in -radiusChunks..radiusChunks) {
                 if (dx * dx + dz * dz <= rSq) {
                     val targetX = centerChunkX + dx
                     val targetZ = centerChunkZ + dz
-                    // نطلب فقط الشنكات غير الموجودة
                     if (!chunkSource.hasChunk(targetX, targetZ)) {
                         massQueue.add(ChunkPos(targetX, targetZ))
                     }
@@ -162,7 +156,6 @@ object Smoothchunks : ModInitializer {
         val level = player.level() as? ServerLevel ?: return
         val chunkSource = level.chunkSource
 
-        // معالجة دفعة متزنة (3 شنكات في التيك في الخلفية)
         for (i in 0 until 3) {
             if (massQueue.isEmpty()) break
             val pos = massQueue.poll() ?: break
@@ -173,7 +166,6 @@ object Smoothchunks : ModInitializer {
             } catch (_: Exception) {}
         }
 
-        // تحديث شريط الـ Action Bar كل 10 تيكات (نصف ثانية)
         if (tickTimer % 10 == 0) {
             val elapsedSec = maxOf(0.1, (System.currentTimeMillis() - massStartTime) / 1000.0)
             val speed = massCompletedChunks / elapsedSec
@@ -192,7 +184,6 @@ object Smoothchunks : ModInitializer {
             player.sendSystemMessage(hudMsg, true)
         }
 
-        // عند اكتمال 100%
         if (massQueue.isEmpty()) {
             isMassPreloading = false
             level.playSound(null, player.blockPosition(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.PLAYERS, 1.0f, 1.0f)

@@ -21,7 +21,7 @@ object Smoothchunks : ModInitializer {
     private var preloadedCount = 0L
 
     private val queue = ArrayDeque<Pair<ServerLevel, ChunkPos>>()
-    private val requestedChunks = HashSet<Long>()
+    private val requestedChunks = HashSet<ChunkPos>()
     private var cleanTimer = 0
 
     override fun onInitialize() {
@@ -81,13 +81,12 @@ object Smoothchunks : ModInitializer {
                     val targetX = aheadX + ox
                     val targetZ = aheadZ + oz
                     val chunkPos = ChunkPos(targetX, targetZ)
-                    val posLong = chunkPos.toLong()
 
-                    if (requestedChunks.contains(posLong) || chunkSource.hasChunk(targetX, targetZ)) {
+                    if (requestedChunks.contains(chunkPos) || chunkSource.hasChunk(targetX, targetZ)) {
                         continue
                     }
 
-                    requestedChunks.add(posLong)
+                    requestedChunks.add(chunkPos)
                     queue.add(Pair(level, chunkPos))
                 }
             }

@@ -20,13 +20,11 @@ object Smoothchunks : ModInitializer {
     var enabled = true
     private var preloadedCount = 0L
 
-    // قائمة انتظار الشنكات لتوزيع حمل المعالجة
     private val queue = ArrayDeque<Pair<ServerLevel, ChunkPos>>()
     private val requestedChunks = HashSet<Long>()
     private var cleanTimer = 0
 
     override fun onInitialize() {
-        // تسجيل أمر الشات /smoothchunks
         CommandRegistrationCallback.EVENT.register { dispatcher, _, _ ->
             dispatcher.register(
                 Commands.literal("smoothchunks")
@@ -45,23 +43,20 @@ object Smoothchunks : ModInitializer {
             )
         }
 
-        // محرك المعالجة والتقسيط في نهاية كل تيك للسيرفر
         ServerTickEvents.END_SERVER_TICK.register { server ->
             if (!enabled) return@register
 
             cleanTimer++
-            if (cleanTimer > 120) { // تنظيف الذاكرة المؤقتة كل 6 ثوانٍ
+            if (cleanTimer > 120) {
                 cleanTimer = 0
                 if (requestedChunks.size > 500) requestedChunks.clear()
             }
 
-            // 1. التنبؤ بالشنكات المستقبلية بناءً على حركة اللاعبين
             for (player in server.playerList.players) {
                 if (player.isSpectator) continue
                 predictAndQueueAhead(player)
             }
 
-            // 2. معالجة وتوليد شنك واحد فقط بالخلفية بدون الضغط على المعالج
             processQueueGradually()
         }
     }
@@ -70,56 +65,48 @@ object Smoothchunks : ModInitializer {
         val level = player.level() as? ServerLevel ?: return
         val chunkSource = level.chunkSource
 
-        // إحداثيات الشنك الحالي للاعب
         val currentChunkX = player.blockX shr 4
         val currentChunkZ = player.blockZ shr 4
 
-        // قراءة زاوية نظر اللاعب
         val yawRad = Math.toRadians(player.yRot.toDouble())
         val dirX = -sin(yawRad)
         val dirZ = cos(yawRad)
 
-        // حساب الشنكات كدام اللاعب بمسافة 2 إلى 4 شنكات
         for (dist in 2..4) {
             val aheadX = currentChunkX + Math.round(dirX * dist).toInt()
             val aheadZ = currentChunkZ + Math.round(dirZ * dist).toInt()
 
-            // فحص الشنك الرئيسي والشنكات المجاورة له في زاوية الرؤية
             for (ox in -1..1) {
                 for (oz in -1..1) {
                     val targetX = aheadX + ox
                     val targetZ = aheadZ + oz
-                    val posLong = ChunkPos.asLong(targetX, targetZ)
+                    val chunkPos = ChunkPos(targetX, targetZ)
+                    val posLong = chunkPos.toLong()
 
-                    // إذا الشنك مولد مسبقاً أو مطلوب بالخلفية، نتجاهله
                     if (requestedChunks.contains(posLong) || chunkSource.hasChunk(targetX, targetZ)) {
                         continue
                     }
 
-                    // إضافته لقائمة التحميل المقسّط
                     requestedChunks.add(posLong)
-                    queue.add(Pair(level, ChunkPos(targetX, targetZ)))
+                    queue.add(Pair(level, chunkPos))
                 }
             }
         }
     }
 
-    // تنقيط التوليد: توليد شنك واحد فقط بكل تيك
     private fun processQueueGradually() {
         if (queue.isEmpty()) return
 
         val (level, pos) = queue.poll() ?: return
         val chunkSource = level.chunkSource
 
-        // إذا أصبح موجوداً بالذاكرة نتخطاه
         if (chunkSource.hasChunk(pos.x, pos.z)) return
 
-        // طلب الشنك في خيوط المعالجة الخلفية لماينكرافت (Async Future)
         try {
             chunkSource.getChunkFuture(pos.x, pos.z, ChunkStatus.FULL, true)
             preloadedCount++
         } catch (_: Exception) {
-            // حماية ضد أي أخطاء مفاجئة
+            // ignore
         }
     }
 }

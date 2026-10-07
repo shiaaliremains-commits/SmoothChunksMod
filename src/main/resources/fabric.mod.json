@@ -1,0 +1,51 @@
+{
+	"schemaVersion": 1,
+	"id": "smoothchunks",
+	"version": "${version}",
+	"name": "smoothchunks",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/smoothchunks/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			{
+				"value": "my.smoothchunks.Smoothchunks",
+				"adapter": "kotlin"
+			}
+		],
+		"client": [
+			{
+				"value": "my.smoothchunks.client.SmoothchunksClient",
+				"adapter": "kotlin"
+			}
+		],
+		"fabric-datagen": [
+			{
+				"value": "my.smoothchunks.client.SmoothchunksDataGenerator",
+				"adapter": "kotlin"
+			}
+		]
+	},
+	"mixins": [
+		"smoothchunks.mixins.json",
+		{
+			"config": "smoothchunks.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*",
+		"fabric-language-kotlin": "*"
+	}
+}

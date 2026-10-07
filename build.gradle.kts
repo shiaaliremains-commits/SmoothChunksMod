@@ -16,10 +16,6 @@ repositories {
         name = "TerraformersMC"
         url = uri("https://maven.terraformersmc.com/releases/")
     }
-    maven {
-        name = "isXander Maven"
-        url = uri("https://maven.isxander.dev/releases")
-    }
 }
 
 loom {
@@ -48,7 +44,6 @@ dependencies {
     implementation("net.fabricmc.fabric-language-kotlin:${providers.gradleProperty("fabric_kotlin_version").get()}")
 
     compileOnly("com.terraformersmc:modmenu:21.0.0-beta.1")
-    compileOnly("dev.isxander:yet-another-config-lib:3.9.7+26.3-fabric")
 }
 
 tasks.processResources {
